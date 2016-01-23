@@ -1,2 +1,2 @@
 # mnrisks
-Online portal to MInnesota's air emissions and health risk model
+Online portal to MN's air emissions and health risk model
