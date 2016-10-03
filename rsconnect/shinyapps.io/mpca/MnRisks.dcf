@@ -1,0 +1,9 @@
+name: MnRisks
+account: mpca
+server: shinyapps.io
+appId: 87021
+bundleId: 565475
+url: https://mpca.shinyapps.io/MNRISKS/
+when: 1474574056.64886
+asMultiple: FALSE
+asStatic: FALSE

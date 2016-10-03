@@ -2,6 +2,10 @@ input[type="number"] {
   max-width: 80%;
 }
 
+.navbar-static-top {
+  background-color: #ededed;
+}
+
 div.outer {
   position: fixed;
   top: 41px;
@@ -31,7 +35,7 @@ transition: opacity 500ms 1s;
 }
 #controls:hover {
 /* Fade in while hovering */
-opacity: 0.95;
+opacity: 0.9;
 transition-delay: 0;
 }
 
