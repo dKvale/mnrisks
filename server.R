@@ -5,7 +5,6 @@ library(shiny)
 library(markdown)
 library(sp)
 library(scales)
-#library(foreign)
 
 
 ###########

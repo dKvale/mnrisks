@@ -1,4 +1,5 @@
 library(readxl)
+library(foreign)
 
 
 # Load sources
@@ -39,7 +40,6 @@ ap_sources$Source_Type <- ap_sources$Type_desc
 ap_sources$Type_desc <- NULL
 
 #write.dbf(ap_sources, "M:\\MNRiskS 2011 Results\\Special Requests\\Minneapolis\\Allocated Point\\Allocated_point_sources.dbf")
-
 
 
 # Gas stations
@@ -94,8 +94,6 @@ w_fire$Source_Type <- "Wildfire"
 write.dbf(w_fire, "M:\\MNRiskS 2011 Results\\Special Requests\\Minneapolis\\Fires\\Wildfires.dbf")
 
 
-
-
 # High traffic
 roads <- read.dbf("M:\\MNRiskS 2011 Results\\Special Requests\\Minneapolis\\Onroad High Traffic\\Onroad_Hi_Traffic.dbf")
 
@@ -105,27 +103,57 @@ names(roads) <- c("County", "Source_ID",  "Process_SCC_Code", "Sum_of_Emissions"
 
 roads$Source_Type <- "High traffic roads"
 
-roads <- 
 
 write.dbf(roads, "M:\\MNRiskS 2011 Results\\Special Requests\\Minneapolis\\Onroad High Traffic\\Onroad_Hi_Traffic.dbf")
 
 
-# Convert all to lat/long
 
+# Combine fires
+fires <- rbind(p_burn, w_fire)
 
-
-
-
-# Geo-locate sources (blockgroups, county, city, region)
-
-
-
+fires$Source_Nam <- fires$Source_Typ
 
 
 # Combine all
-all_sources <-
+src_columns <- c("Source_ID", "Source_Nam", "Lat", "Long", "Source_Typ")
 
- 
+gas_sources$Source_ID <- paste0("gs_", gas_sources$ID)
+
+all_sources <- rbind(airp[ , src_columns], 
+                     ap_sources[ , src_columns], 
+                     fires[ , src_columns],
+                     gas_sources[ , src_columns])
+
+all_sources$Short_Desc <- ""
+  
+names(pt_sources)[1] <- "Source_ID"
+
+src_columns <- c("Source_ID", "Source_Nam", "Lat", "Long", "Source_Typ", "Short_Desc")
+
+all_sources <- rbind(all_sources, pt_sources[ , src_columns])
+
+  
+
+##-- Assign sources to blockgroup and county
+coordinates(all_sources) <- ~Long + Lat
+
+proj4string(all_sources) <- CRS("+init=epsg:4326")
+#points_utm <- spTransform(points, CRS("+init=epsg:26915"))
+
+
+# Load blockgroup boundaries
+bgs <- tigris::block_groups(state=c("MN"), cb=F)
+names(bgs@data)[c(2)] <- c("County") 
+bgs  <- spTransform(bgs , CRS("+init=epsg:4326"))
+
+
+# Geo-locate
+all_sources@data[ , "GEOID"]  <- over(all_sources, bgs)[ , "GEOID"]
+all_sources@data[ , "County"] <- over(all_sources, bgs)[ , "County"]
+
+
+# Add city and region
+
 
 
 # SAVE ALL
@@ -135,10 +163,6 @@ saveRDS(pt_sources, "map data//facility_locations.rdata")
 saveRDS(ap_sources, "map data//allocated_point_locations.rdata")
 saveRDS(gas_sources, "map data//gas_stations.rdata")
 saveRDS(airp, "map data//airports.rdata")
-
-
-# Combine fires
-fires <- rbind(p_burn, w_fire)
 saveRDS(fires, "map data//wildfires.rdata")
 
 saveRDS(roads, "map data//high_traffic_roads.rdata")
