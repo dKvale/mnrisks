@@ -5,7 +5,8 @@ library(shiny)
 library(markdown)
 library(sp)
 library(scales)
-
+library(readr)
+library(tigris)
 
 ###########
 #source('prep_maps.R')#
@@ -17,9 +18,10 @@ df_blocks  <- readRDS('map data//bg_data.rdata')[ , c(2:4,6:7,9:10,12)]
 
 
 # Load demography
-library(readr)
+#demo <- read_csv("X:/Agency_Files/Outcomes/Risk_Eval_Air_Mod/_Air_Risk_Evaluation/Staff Folders/Dorian/Mnrisks/mnrisks 2008/Env. Justice/EJ_demog_traffic/Demog&Traffic&MNRiskS_text.csv")
+#saveRDS(demo, 'map data//demography.rdata')
 
-demo <- read_csv("X:/Agency_Files/Outcomes/Risk_Eval_Air_Mod/_Air_Risk_Evaluation/Staff Folders/Dorian/Mnrisks/mnrisks 2008/Env. Justice/EJ_demog_traffic/Demog&Traffic&MNRiskS_text.csv")
+demo <- readRDS('map data//demography.rdata')
 
 demo <- demo[ , c("GEOID_num","POPTOTAL", "POPOVER5", "AREA", "WHITENH")]
 
@@ -38,14 +40,27 @@ df_blocks$POP_Under5_density <- df_blocks$POP_Under5 / df_blocks$AREA
 
 # LOAD cities
 cities <- readRDS("map data//city_blockgroups.rdata")
-#cities$City <- gsub("St[.] Paul", "St Paul", cities$City)
 
 df_blocks <- left_join(df_blocks, cities)
 
 
 # Load sources
-all_sources <- readRDS("map data//city_blockgroups.rdata")
+all_sources <- readRDS("map data//all_source_locations.rdata")
 
+
+names(all_sources) <- c("Source_ID", "Source_Name", "Source_Type", "Short_Desc", "GEOID", "FIPS_Code",  "Long", "Lat", "zoneID", "County", "City", "Region")
+
+all_sources$Short_Desc <- NULL
+
+src_colors <- data_frame(Source_Type = unique(all_sources$Source_Type),
+                         src_color   = c("#EFB087","#442F14","#7B7B7B","#231F20","#234F9B","#AE659D","#1D1D1D","#1B4470","#241F22","#353233","#AC639B"))
+
+all_sources <- left_join(all_sources, src_colors)
+
+src_sizes <- data_frame(Source_Type = unique(all_sources$Source_Type),
+                         src_size  = c(4, 3,3,3,3.3,3.4,3.5,3.8,4.2,3,2.8) * 1.1)
+
+all_sources <- left_join(all_sources, src_sizes)
 
 # LOAD receptor maps
 top50 <- data.frame(readRDS('map data//Top_50_receptors.rdata')[ , -c(9)], stringsAsFactors = F)
@@ -91,7 +106,7 @@ block_groups <- readRDS('map data//block_groups.rdata')
 
 #-- Add population and risk data
 #counties <- tigris::geo_join(counties, df_county, "County_FIPS", "COUNTY_FIPS")
-df_blocks <- tigris::geo_join(block_groups, df_blocks, "GEOID", "GEOID")
+df_blocks <- geo_join(block_groups, df_blocks, "GEOID", "GEOID")
 
 #counties <- subset(counties, !is.na(County_Name))
 #block_groups <- subset(block_groups, !is.na(Population))
@@ -101,10 +116,22 @@ df_blocks <- tigris::geo_join(block_groups, df_blocks, "GEOID", "GEOID")
 #-- Server for mnrisks
 shinyServer(function(input, output, session) {
   
-  output$plot <- renderPlot({
-    plot(cars, type=input$plotType)
-  })
 
+# Generate county and city values for filters
+updateSelectInput(session, "county_var1",
+                  choices = c("All", sort(unique(df_blocks$County))),
+                  selected = 'All')
+  
+# Remove cities with one blockgroup
+cities <- sort(unique(df_blocks$City[duplicated(df_blocks$City)]))
+
+cities <- cities[!cities %in% c("Minneapolis", "St. Paul", "Duluth", "Rochester", "St. Cloud")]
+  
+updateSelectInput(session, "city_var1",
+                  choices = c("All", "Minneapolis", "St. Paul", "Duluth", "Rochester", "St. Cloud", cities),
+                  selected = c("Minneapolis", "St. Paul"))  
+
+  
 ##-- BLOCK GROUP MAP    
   output$bgmap <- renderLeaflet({
     
@@ -122,6 +149,11 @@ shinyServer(function(input, output, session) {
     if(is.null(input$county_var1)) county_select <- "All"
     else county_select <- input$county_var1
     
+    if(is.null(input$source_var1)) source_select <- "None"
+    else source_select <- input$source_var1
+    
+    print(source_select)
+    
     demographic <- variable %in% c("Frx_Non_white_or_Hispanic", "Population", "Percent_in_Poverty", "Population_Density", "Traffic_Density", "POP_Under5")
     
     #-- Add population and risk data
@@ -129,18 +161,27 @@ shinyServer(function(input, output, session) {
       block_risk <- readRDS(paste0("map data/Pollutants/", input$pollutant_var1, "_risks.Rds"))
       #block_risk <- left_join(block_risk, df_blocks[ ,-c(4,8:9)])
      
-      block_risk <- tigris::geo_join(block_groups, block_risk[ ,c(names(block_risk)[c(1:5,24:25)], variable)], "GEOID", "GEOID")
+      block_risk <- geo_join(block_groups, block_risk[ ,c(names(block_risk)[c(1:5,24:25)], variable)], "GEOID", "GEOID")
       #print(block_risk[1, ])
     } else {
       block_risk <- df_blocks
     }
     
+    
+    #-- Filter sources
+    if(!identical(source_select, "None")) { 
+        sources <- filter(all_sources, (Source_Type %in% source_select) | ("All" %in% source_select))
+    } 
       
+    
     #-- Filter receptors
     if(input$receptors1 && !demographic) {
       recept_temp <- filter(top50, CAS == input$pollutant_var1)
       recept_temp$variable <- recept_temp[ , gsub("_mean", "", variable)]
+      recept_temp <- arrange(recept_temp, -variable)[1:50, ]
+      recept_temp <- filter(recept_temp, variable > 0)
     } 
+    
     
     if(FALSE) {
     #-- Filter region
@@ -148,18 +189,25 @@ shinyServer(function(input, output, session) {
       block_risk <- subset(block_risk, Region %in% input$region_var1)
       
       if(input$receptors1 & !demographic) {
-        recept_temp   <- filter(recept_temp, County %in% block_risk$County)
+        recept_temp  <- filter(recept_temp, County %in% block_risk$County)
+      }
+      
+      if(!identical(source_select, "None")) { 
+        if(nrow(sources) > 1) sources <- filter(sources, County %in% block_risk$County)
       }
     } 
     }
-    
     
     #-- Filter counties
     if(!"All" %in% county_select) {
        block_risk <- subset(block_risk, County %in% toupper(county_select))
        
        if(input$receptors1 & !demographic) {
-         if(nrow(recept_temp) > 1) recept_temp   <- filter(recept_temp, County %in% block_risk$County)
+         if(nrow(recept_temp) > 1) recept_temp  <- filter(recept_temp, County %in% block_risk$County)
+       }
+       
+       if(!identical(source_select, "None")) { 
+         if(nrow(sources) > 1) sources <- filter(sources, County %in% block_risk$County)
        }
     } 
     
@@ -168,67 +216,44 @@ shinyServer(function(input, output, session) {
       block_risk <- subset(block_risk, City %in% city_select)
       
       if(input$receptors1 & !demographic) {
-      if(nrow(recept_temp) > 1) recept_temp   <- filter(recept_temp, City %in% block_risk$City)
+        if(nrow(recept_temp) > 1) recept_temp   <- filter(recept_temp, City %in% block_risk$City)
       }
-    } 
-    
-    #-- Filter sources
-    #if(!is.null(input$source_var1)) {
-    #if(input$gas1 | input$facility1 | input$airport1 | input$fires1 | input$hwy1) {
-    #  sources <- readRDS('map data//source_locations.rdata')
-   #   recept_temp$variable <- recept_temp[ , gsub("_mean", "", variable)]
-   # } 
-    
-    
-    #-- Set legend parameters
-    
-    #-- define hex colors for legend
-    if(variable == "Percent_diff_Cancer_Risk") {
       
-      legend_colors <- c('#b2182b','#ef8a62','#fddbc7',
-                         '#f7f7f7',
-                         '#d1e5f0','#67a9cf','#2166ac')
-  
-      #legend_colors <- c('#762a83','#af8dc3','#e7d4e8',
-      #                   '#f7f7f7',
-      #                   '#d9f0d3','#7fbf7b','#1b7837') 
-    } else {
-      legend_colors <- c("#ffffcc", "#c7e9b4", "#7fcdbb", 
-                        "#41b6c4", "#2c7fb8", "#253494") 
-    }
+      if(!identical(source_select, "None")) { 
+        if(nrow(sources) > 1) sources <- filter(sources, City %in% block_risk$City)
+      }
+      
+    } 
+   
+    #-- Set legend parameters
+    #-- define hex colors for legend
+    legend_colors <- c("#ffffcc", "#c7e9b4", "#7fcdbb", "#41b6c4", "#2c7fb8", "#253494") 
+    
     # Define breaks for legend
-    if(variable == "Population"){
+    if(variable == "Population") {
       
       breaks <- c(0, 75, 700, 1000, 1500, 2000, 200000)
       
       block_risk$var_bins <- cut(block_risk[[variable]], 
-                                      breaks= breaks, 
-                                      labels=legend_colors,
-                                      include.lowest=T)
+                                      breaks = breaks, 
+                                      labels =legend_colors,
+                                      include.lowest = T)
       
       breaks <- c("75","700","1,000","1,500","2,000","3,000+", "8,000")
-      
-    } else if(variable == "Percent_diff_Cancer_Risk") {
-      
-      breaks <- c(-10, -.25, -.1, 0, .1, .25, .5, 10)
-      
-      block_risk$var_bins <- cut(block_risk[[variable]], 
-                                        breaks= breaks, 
-                                        labels=legend_colors,
-                                        include.lowest=T)
-      
-      breaks <- c(-.5, -.25, -.1, 0, '+0.1', '+0.25', 99, '+0.5')
       
     } else {
       breaks <- quantile(block_risk[[variable]], c(0,0.17,0.33,0.51,0.68,0.91, 1), na.rm=T) * c(1,1,1,1,1,1,1.01)
       
       if(breaks[2] < breaks[3]/10) breaks[2] <- breaks[3]/2
       
+      if(length(unique(breaks)) < 7) breaks <- seq(min(breaks), min(breaks) + 1, length = 7)
+      
       block_risk$var_bins <- cut(block_risk[[variable]], 
                                         breaks= breaks, 
                                         labels= legend_colors,
                                         include.lowest=T)
       
+      if(FALSE) {
       if(input$receptors1 & grepl("Cancer", variable) & !demographic) {
         if(nrow(recept_temp) >1) {
         recept_temp$var_bins <- cut(recept_temp$Cancer_Risk, 
@@ -237,16 +262,13 @@ shinyServer(function(input, output, session) {
                                     include.lowest=T)
       }
       }
+      }
+      
       breaks <- as.character(signif(breaks, 2))
     }
 
     
-    if(!grepl("Cancer", variable) & input$receptors1 & !demographic) {
-      if(nrow(recept_temp) > 1) {
-      recept_temp$var_bins <- "#d3d3d3"
-    }}
-    
-    #-- Plot using leaflet
+        #-- Plot using leaflet
     ##-- Create map and assign popup options
     bgmap <- leaflet(block_risk) %>% 
       addProviderTiles("CartoDB.Positron") %>% 
@@ -265,14 +287,44 @@ shinyServer(function(input, output, session) {
       if(nrow(recept_temp) > 1) {
       bgmap <- bgmap %>% 
                addCircleMarkers(lng = recept_temp$Long, lat = recept_temp$Lat, weight=1.3,
-                 radius=3.2,
-                 color = "#7e7e7e",
+                 radius  = 3.8,
+                 color   = "#7e7e7e",
                  opacity = .6,
-                 fillColor = recept_temp$var_bins,
+                 fillColor = "#d3d3d3",
                  fillOpacity = .65,
                  popup=paste("<b><span style='font-size:1.5em;'>", signif(recept_temp$variable, 2), "</span> </b><br>",
                              gsub("_", " ", variable), "<br><br>",
                              recept_temp$County, ": ", recept_temp$GEOID, " "))
+      
+      bgmap <- bgmap %>% addLegend("topleft",
+                                   colors  = "#d3d3d3",
+                                   labels  = input$pollutant_var1,
+                                   title   = "Top 50 receptors",
+                                   opacity = .96)
+      
+      }
+    }
+    
+    if(!identical(source_select, "None")) {
+      if(nrow(sources) > 1) {
+      bgmap <- bgmap %>% 
+        addCircleMarkers(lng = sources$Long, lat = sources$Lat, weight=1.1,
+                         radius    = sources$src_size,
+                         color     = "#7e7e7e",
+                         opacity   = .77,
+                         fillColor = sources$src_color,
+                         fillOpacity = .85,
+                         popup = paste("<b><span style='font-size:1.5em;'>", sources$Source_Name, "</span> </b><br>",
+                                       sources$Source_Type, "<br><br>",
+                                       "Description:", sources$Short_Desc, "<br>",
+                                       "County / Blockgorup:", sources$County, " / ", sources$GEOID, " "))
+      
+      bgmap <- bgmap %>% addLegend("topleft",
+                          colors  = unique(sources$src_color),
+                          labels  = unique(sources$Source_Type),
+                          title   = "Source Types",
+                          opacity = .96)
+      
       }
       }
     
@@ -283,6 +335,8 @@ shinyServer(function(input, output, session) {
                 title   = gsub("_", " ", variable),
                 opacity = .96)
     
+    
+   
   })
   
   output$table <- DT::renderDataTable({

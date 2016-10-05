@@ -10,21 +10,31 @@ vars <- c("Non-Cancer - ambient air inhalation risk (annual mean)" = "Inhalation
           "Population (2010)" = "Population", 
           "Population Density (2010)" = "Population_Density",
           "Children under 5 (2010)" = "POP_Under5",
-          "Identify as Hispanic or non-white" = "Frx_Non_white_or_Hispanic",
+          "Identify as Hispanic or non-white in Census" = "Frx_Non_white_or_Hispanic",
           "% in Poverty" = "Percent_in_Poverty",
           "Traffic Density" = "Traffic_Density")
           
 block_vars <- c("All", 271230361001, 271230413022)
 
-#county_vars <- c("All", "Hennepin","Ramsey", "St. Louis", "Itasca")
+county_vars <- c("All", "Hennepin","Ramsey", "St. Louis", "Itasca")
 
-county_vars <- c("All", unique(df_blocks$County))
+#county_vars <- c("All", sort(unique(df_blocks$County)))
 
 region_vars <- c("All", "Northeast", "Metro (7 County)", "Northwest", "Central", "Southwest", "Southeast")
 
-city_vars   <- c("All", "Minneapolis", "St. Paul", "Duluth", "Rochester", "St. Cloud", (unique(df_blocks$City)[!unique(df_blocks$City) %in% c("Minneapolis", "St. Paul", "Duluth", "Rochester", "St. Cloud")]))
+city_vars   <- c("All", "Minneapolis", "St. Paul", "Duluth", "Rochester", "St. Cloud")
 
-source_vars <- c("None", "All", "Gas stations", "Facilities & point sources","Airports", "Wildfires & prescribed burns", "High traffic roadways")
+source_vars <- c("All",
+                 "Permitted facilities & point sources" = "Permitted facility", 
+                 "Airports" = "Airport",
+                 "Crematories" = "Crematory",
+                 "Dry cleaners" = "Dry cleaners",
+                 "Fluorescent light recycler" = "Fluorescent light recycling",
+                 "Gas stations" = "Gas station",
+                 "Toxic Release Inventory site" = "Toxic Release Inventory",
+                 "Wildfires & prescribed burns" = "Wildfire",
+                 "None"
+                 )
 
 #cat(paste(paste0('"', a$Pollutant, '"', " = ", '"', a$CAS,'"'), collapse = "\n"))
 
@@ -191,20 +201,20 @@ shinyUI(navbarPage("MNRISKS 2011",
                                               draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                                               width = 330, height = "auto",
                                               
-                                              h3("Map Layers"),
+                                              h3("Map layers"),
                                               
                                               #selectInput("color", "Color", vars),
                                               selectInput("variable1", "Summary", vars, selected = "Inhalation_Hazard_mean"),
                                               
-                                              selectInput("pollutant_var1", "Pollutant", pollutant_vars, selected = "50-00-0"),
+                                              selectInput("pollutant_var1", "Pollutant", pollutant_vars, selected = "All"),
                                               #selectInput("region_var1", "Region", region_vars, selected = "All"),
                                               
                                               selectizeInput("county_var1", "County", county_vars, selected = "All", multiple=TRUE),
                                               selectizeInput("city_var1", "City", city_vars, selected = c("Minneapolis", "St. Paul"), multiple=TRUE),
                                            
-                                              h5("Add Layers"),
+                                              #h5("Add Layers"),
                                               #checkboxInput("receptors1", "Show point source receptors", value=F),
-                                              selectizeInput("source_var1", "Source locations", source_vars, selected = "None", multiple=TRUE),
+                                              selectizeInput("source_var1", "Pollution sources", source_vars, selected = "None", multiple=TRUE),
                                               
                                               checkboxInput("receptors1", "Top 50 receptors", value=F),
                                               br()

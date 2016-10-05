@@ -17,7 +17,7 @@ tabPanel("County Map",
                            checkboxInput("receptors2", "Show point source receptors", value=F),
                            br()
                            
-             ))),
+             )))
 
 
 #server.R 

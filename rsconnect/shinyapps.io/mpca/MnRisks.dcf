@@ -1,9 +1,10 @@
-name: MnRisks
+name: MNRiskS
 account: mpca
 server: shinyapps.io
 appId: 87021
-bundleId: 565475
+bundleId: 577508
 url: https://mpca.shinyapps.io/MNRISKS/
-when: 1474574056.64886
+when: 1475680618.40577
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: map data/allocated_point_locations.rdata|map data/facility_locations.rdata|map data/missing_receptors.rdata|map data/risk_points_Itasca.rdata|R/Combine source locations.R|R/county_map.R|R/mpca_colors.R|R/prep_maps.R|R/top50.R
