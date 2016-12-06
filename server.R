@@ -16,7 +16,6 @@ library(tigris)
 df_blocks  <- readRDS('map data//bg_data.rdata')[ , c(2:4,6:7,9:10,12)]
 #saveRDS(df_blocks, 'map data//bg_data.rdata')
 
-
 # Load demography
 #demo <- read_csv("X:/Agency_Files/Outcomes/Risk_Eval_Air_Mod/_Air_Risk_Evaluation/Staff Folders/Dorian/Mnrisks/mnrisks 2008/Env. Justice/EJ_demog_traffic/Demog&Traffic&MNRiskS_text.csv")
 #saveRDS(demo, 'map data//demography.rdata')
@@ -52,15 +51,18 @@ names(all_sources) <- c("Source_ID", "Source_Name", "Source_Type", "Short_Desc",
 
 all_sources$Short_Desc <- NULL
 
+all_sources[all_sources$Source_Type %in% c('Wildfire', 'Prescribed burn'), 'Source_Type'] <- 'Wildfires & Prescribed burns'
+
 src_colors <- data_frame(Source_Type = unique(all_sources$Source_Type),
-                         src_color   = c("#EFB087","#442F14","#7B7B7B","#231F20","#234F9B","#AE659D","#1D1D1D","#1B4470","#241F22","#353233","#AC639B"))
+                         src_color   = c("#EFB087","#442F14","#7B7B7B","#8073ac","#234F9B","#AE659D","#fdb863","#1B4470","#353233", "#542788")) # ,"#AC639B"))
 
 all_sources <- left_join(all_sources, src_colors)
 
 src_sizes <- data_frame(Source_Type = unique(all_sources$Source_Type),
-                         src_size  = c(4, 3,3,3,3.3,3.4,3.5,3.8,4.2,3,2.8) * 1.1)
+                         src_size  = c(4.3,3,3,3,3.3,3.4,3.5,4,3.4,3) * 1.1)
 
 all_sources <- left_join(all_sources, src_sizes)
+
 
 # LOAD receptor maps
 top50 <- data.frame(readRDS('map data//Top_50_receptors.rdata')[ , -c(9)], stringsAsFactors = F)
@@ -214,7 +216,8 @@ updateSelectInput(session, "city_var1",
     #-- Filter city
     if(!"All" %in% city_select) {
       block_risk <- subset(block_risk, City %in% city_select)
-      
+    
+    
       if(input$receptors1 & !demographic) {
         if(nrow(recept_temp) > 1) recept_temp   <- filter(recept_temp, City %in% block_risk$City)
       }
@@ -223,7 +226,7 @@ updateSelectInput(session, "city_var1",
         if(nrow(sources) > 1) sources <- filter(sources, City %in% block_risk$City)
       }
       
-    } 
+    }   
    
     #-- Set legend parameters
     #-- define hex colors for legend
@@ -242,23 +245,25 @@ updateSelectInput(session, "city_var1",
       breaks <- c("75","700","1,000","1,500","2,000","3,000+", "8,000")
       
     } else {
-      breaks <- quantile(block_risk[[variable]], c(0,0.17,0.33,0.51,0.68,0.91, 1), na.rm=T) * c(1,1,1,1,1,1,1.01)
+      #breaks <- quantile(block_risk[[variable]], c(0,0.17,0.33,0.51,0.68,0.91, 1), na.rm=T) * c(1,1,1,1,1,1,1.01)
+      
+      breaks <- c(seq(min(block_risk[[variable]], na.rm=T), max(block_risk[[variable]], na.rm=T), length.out = 7))
       
       if(breaks[2] < breaks[3]/10) breaks[2] <- breaks[3]/2
       
       if(length(unique(breaks)) < 7) breaks <- seq(min(breaks), min(breaks) + 1, length = 7)
       
       block_risk$var_bins <- cut(block_risk[[variable]], 
-                                        breaks= breaks, 
-                                        labels= legend_colors,
-                                        include.lowest=T)
+                                        breaks = breaks, 
+                                        labels = legend_colors,
+                                        include.lowest = T)
       
       if(FALSE) {
       if(input$receptors1 & grepl("Cancer", variable) & !demographic) {
         if(nrow(recept_temp) >1) {
         recept_temp$var_bins <- cut(recept_temp$Cancer_Risk, 
-                                    breaks= breaks * c(0,1,1,1,1,1,100), 
-                                    labels= legend_colors,
+                                    breaks = breaks * c(0,1,1,1,1,1,100), 
+                                    labels = legend_colors,
                                     include.lowest=T)
       }
       }
@@ -272,15 +277,15 @@ updateSelectInput(session, "city_var1",
     ##-- Create map and assign popup options
     bgmap <- leaflet(block_risk) %>% 
       addProviderTiles("CartoDB.Positron") %>% 
-      addPolygons(stroke=T,
-                  color="#d3d3d3",
-                  weight=1.2,
-                  smoothFactor=0.3,
-                  fillOpacity=.71,
-                  fillColor= ~var_bins,
-                  popup=paste0("<b><span style='font-size:1.5em;'>", signif(block_risk[[variable]], 2), "</span> </b><br>",
-                                gsub("_", " ", variable), "<br><br>",
-                                block_risk$County, ": ", block_risk$GEOID, " "))
+      addPolygons(stroke = T,
+                  color  = "#d3d3d3",
+                  weight = 1.2,
+                  smoothFactor = 0.3,
+                  fillOpacity  = .71,
+                  fillColor    = ~var_bins,
+                  popup        = paste0("<b><span style='font-size:1.5em;'>", signif(block_risk[[variable]], 2), "</span> </b><br>",
+                                        gsub("_", " ", variable), "<br><br>",
+                                        block_risk$County, ": ", block_risk$GEOID, " "))
                                
     
     if(input$receptors1 & !demographic) {
@@ -290,11 +295,11 @@ updateSelectInput(session, "city_var1",
                  radius  = 3.8,
                  color   = "#7e7e7e",
                  opacity = .6,
-                 fillColor = "#d3d3d3",
+                 fillColor   = "#d3d3d3",
                  fillOpacity = .65,
-                 popup=paste("<b><span style='font-size:1.5em;'>", signif(recept_temp$variable, 2), "</span> </b><br>",
-                             gsub("_", " ", variable), "<br><br>",
-                             recept_temp$County, ": ", recept_temp$GEOID, " "))
+                 popup       = paste("<b><span style='font-size:1.5em;'>", signif(recept_temp$variable, 2), "</span> </b><br>",
+                                     gsub("_", " ", variable), "<br><br>",
+                                     recept_temp$County, ": ", recept_temp$GEOID, " "))
       
       bgmap <- bgmap %>% addLegend("topleft",
                                    colors  = "#d3d3d3",

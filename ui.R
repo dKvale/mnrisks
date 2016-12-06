@@ -32,7 +32,7 @@ source_vars <- c("All",
                  "Fluorescent light recycler" = "Fluorescent light recycling",
                  "Gas stations" = "Gas station",
                  "Toxic Release Inventory site" = "Toxic Release Inventory",
-                 "Wildfires & prescribed burns" = "Wildfire",
+                 "Wildfires & prescribed burns" = "Wildfires & Prescribed burns",
                  "None"
                  )
 
@@ -190,9 +190,9 @@ shinyUI(navbarPage("MNRISKS 2011",
                    tabPanel("Block Group Map",
                             div(class="outer",
                                 tags$head(
-                                  # Include our custom CSS
+                                  # Include custom CSS
                                   includeCSS("CSS//styles.css")
-                                  #includeScript("gomap.js")
+
                                 ),
                                 
                                 leafletOutput("bgmap", width="100%", height="100%"),
@@ -203,7 +203,6 @@ shinyUI(navbarPage("MNRISKS 2011",
                                               
                                               h3("Map layers"),
                                               
-                                              #selectInput("color", "Color", vars),
                                               selectInput("variable1", "Summary", vars, selected = "Inhalation_Hazard_mean"),
                                               
                                               selectInput("pollutant_var1", "Pollutant", pollutant_vars, selected = "All"),
@@ -213,8 +212,7 @@ shinyUI(navbarPage("MNRISKS 2011",
                                               selectizeInput("city_var1", "City", city_vars, selected = c("Minneapolis", "St. Paul"), multiple=TRUE),
                                            
                                               #h5("Add Layers"),
-                                              #checkboxInput("receptors1", "Show point source receptors", value=F),
-                                              selectizeInput("source_var1", "Pollution sources", source_vars, selected = "None", multiple=TRUE),
+                                              selectizeInput("source_var1", "Pollution sources", source_vars, selected = "Airports", multiple=TRUE),
                                               
                                               checkboxInput("receptors1", "Top 50 receptors", value=F),
                                               br()
