@@ -1,0 +1,154 @@
+---
+title: "MNRISKS 2014"
+output: html_document
+---
+
+```{r, include=F}
+
+#Colors: https://mn.gov/portal/brand/style-guide/colors/
+```
+
+
+<br><br>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+
+body {
+  background-color: #008EAA; /*#f5f5f5 #222d32 */
+  background: hsla(190,100%,33%,1);
+  background: radial-gradient(circle, hsla(190,100%,33%,0.9) 10%, hsla(240,91%,73%,1) 100%);
+  background: -moz-radial-gradient(circle, hsla(190,100%,33%,0.9) 10%, hsla(240,91%,73%,1) 100%);
+  background: -webkit-radial-gradient(circle, hsla(190,100%,33%,0.9) 10%, hsla(240,91%,73%,1) 100%);
+  filter: progid: DXImageTransform.Microsoft.gradient(startColorstr="#008EAA", endColorstr="#7D7CF9", GradientType=1);
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+h1.title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 68px;
+  color:  white;  /*#f9d71c; #F8E81C; #220e0f; #CEB67E;*/
+  margin-top: 52px;
+  text-align: center;
+}
+
+h2 {
+   text-align: center;
+   margin-top: 20px;
+   margin-bottom: 22px;
+   font-weight: bold;
+   color:  #008EAA;  /*#003865; */
+}
+
+.card {
+  border-left: solid 9px #003865;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); 
+  /*box-shadow:  0 4px 8px 1px rgba(255,255,255,0.3), 0 4px 6px 2px rgba(248, 232, 28, 0.2); Yellow shadow*/
+  background-color: white;
+  transition: 0.1s;
+  width: 49%;
+  margin-left: auto;
+  margin-right: auto; 
+  margin-top: 2%;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 8px;
+  padding-bottom: 22px;
+}
+
+img {
+  border-radius: 8px 8px 0 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 12px;
+  margin-bottom: 10px;
+  width: 36%;
+  }
+
+.container {
+  padding: 2px 16px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.footnote {
+  font-size: 12px;
+}
+
+button {
+    color: #444444;
+    background: #F3F3F3;
+    border: 1px #DADADA solid;
+    padding: 5px 10px;
+    border-radius: 2px;
+    font-weight: bold;
+    font-size: 9pt;
+    outline: none;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+
+button:hover {
+    border: 1px #C6C6C6 solid;
+    box-shadow: 1px 1px 1px #EAEAEA;
+    color: #333333;
+    background: #F7F7F7;
+}
+
+button:active {
+    box-shadow: inset 1px 1px 1px #DFDFDF;   
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.8);
+    color: #333333;
+}
+
+a:hover {
+text-decoration: none; 
+color: #333333;
+}
+
+a:active {
+text-decoration: none; 
+color: #333333;
+}
+
+
+</style>
+    
+
+<div class="card">
+<div class="container">
+
+<img src="https://climate.state.mn.us/sites/climate-action/files/inline-images/car.png" alt="car" style="">
+
+<h2>Welcome</h2> 
+MNRISKS gives a snapshot of outdoor air quality with respect to the emissions of air toxics. It estimates the potential long-term risks to human health by assuming air toxics emissions will remain steady over time. 
+
+These results can guide local efforts in reducing harmful air emissions. People may use thes results to study the air toxics and emission sources that raise health risks in different areas. They can then focus on these places in more detail. 
+
+<br>
+
+<button>
+  <a class="first-link" href="www.google.com">
+    Get started
+  </a>
+</button>
+
+<br>
+<p class="footnote">
+**NOTE:** _Modeling results are location based and they do not pinpoint the exposures and risks for a specific person._
+</p> 
+
+</div>
+</div>
+
+
+
+
+
