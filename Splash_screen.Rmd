@@ -130,7 +130,7 @@ color: #333333;
 <h2>Welcome</h2> 
 MNRISKS gives a snapshot of outdoor air quality with respect to the emissions of air toxics. It estimates the potential long-term risks to human health by assuming air toxics emissions will remain steady over time. 
 
-These results can guide local efforts in reducing harmful air emissions. People may use thes results to study the air toxics and emission sources that raise health risks in different areas. They can then focus on these places in more detail. 
+These results can guide local efforts in reducing harmful air emissions. People may use these results to study the air toxics and emission sources that contribute to health risks in different areas. 
 
 <br>
 
